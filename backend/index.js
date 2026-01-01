@@ -1,14 +1,13 @@
 const express = require('express');
 const admin = require('firebase-admin');
+const http = require('http');
+const WebSocket = require('ws');
+
 const app = express();
-app.use(express.json()); // Middleware to parse JSON bodies
+app.use(express.json());
 const port = process.env.PORT || 8080;
 
 // -- START FIREBASE INITIALIZATION --
-// IMPORTANT:
-// 1. Download your service account key from the Google Cloud Console.
-// 2. Save it as 'serviceAccountKey.json' in this 'backend' directory.
-// 3. Make sure to add 'serviceAccountKey.json' to your .gitignore file to keep it private!
 try {
   const serviceAccount = require('./serviceAccountKey.json');
   admin.initializeApp({
@@ -23,6 +22,27 @@ try {
 const db = admin.firestore();
 // -- END FIREBASE INITIALIZATION --
 
+// Create an HTTP server from the Express app
+const server = http.createServer(app);
+
+// Create a WebSocket server
+const wss = new WebSocket.Server({ server });
+
+wss.on('connection', ws => {
+  console.log('Client connected to WebSocket');
+  ws.on('close', () => {
+    console.log('Client disconnected');
+  });
+});
+
+// Function to broadcast data to all connected clients
+function broadcast(data) {
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(data));
+        }
+    });
+}
 
 app.get('/', (req, res) => {
     res.send('Hello from the backend!');
@@ -57,9 +77,11 @@ app.post('/api/gps', async (req, res) => {
 
     try {
         const vehicleRef = db.collection('vehicles').doc(id);
-        // Using set with merge: true will create the document if it doesn't exist,
-        // or update it if it does.
         await vehicleRef.set({ lat, lng }, { merge: true });
+        
+        // Broadcast the update to all WebSocket clients
+        broadcast({ id, lat, lng });
+
         res.status(200).send({ message: 'GPS data received and saved' });
     } catch (error) {
         console.error('Error saving GPS data:', error);
@@ -67,6 +89,7 @@ app.post('/api/gps', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Backend listening on port ${port}`);
+// Start the server
+server.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
 });
