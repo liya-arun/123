@@ -1,5 +1,5 @@
 import React from 'react';
-import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 const containerStyle = {
   width: '100vw',
@@ -18,6 +18,10 @@ function Map() {
   })
 
   const [map, setMap] = React.useState(null)
+  const [vehicles, setVehicles] = React.useState([
+    { id: 'bus1', lat: -3.745, lng: -38.523 },
+    { id: 'bus2', lat: -3.750, lng: -38.530 },
+  ]);
 
   const onLoad = React.useCallback(function callback(map) {
     const bounds = new window.google.maps.LatLngBounds(center);
@@ -29,6 +33,21 @@ function Map() {
     setMap(null)
   }, [])
 
+  // Simulate real-time vehicle updates
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setVehicles(currentVehicles =>
+        currentVehicles.map(vehicle => ({
+          ...vehicle,
+          lat: vehicle.lat + (Math.random() - 0.5) * 0.001,
+          lng: vehicle.lng + (Math.random() - 0.5) * 0.001,
+        }))
+      );
+    }, 2000); // Update every 2 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   return isLoaded ? (
       <GoogleMap
         mapContainerStyle={containerStyle}
@@ -37,8 +56,12 @@ function Map() {
         onLoad={onLoad}
         onUnmount={onUnmount}
       >
-        { /* Child components, such as markers, info windows, etc. */ }
-        <></>
+        {vehicles.map(vehicle => (
+          <Marker
+            key={vehicle.id}
+            position={{ lat: vehicle.lat, lng: vehicle.lng }}
+          />
+        ))}
       </GoogleMap>
   ) : <></>
 }
