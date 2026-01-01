@@ -1,9 +1,10 @@
 import React from 'react';
+import Map from './Map';
 
 function App() {
   return (
     <div>
-      <h1>Public Transport Tracking</h1>
+      <Map />
     </div>
   );
 }
