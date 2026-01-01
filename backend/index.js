@@ -2,6 +2,7 @@ const express = require('express');
 const admin = require('firebase-admin');
 const http = require('http');
 const WebSocket = require('ws');
+const path = require('path'); // Add path module
 
 const app = express();
 app.use(express.json());
@@ -44,11 +45,6 @@ function broadcast(data) {
     });
 }
 
-app.get('/', (req, res) => {
-    res.send('Hello from the backend!');
-});
-
-// Endpoint to get all vehicle locations
 app.get('/api/vehicles', async (req, res) => {
     try {
         const vehiclesRef = db.collection('vehicles');
@@ -67,7 +63,6 @@ app.get('/api/vehicles', async (req, res) => {
     }
 });
 
-// Endpoint to receive GPS data
 app.post('/api/gps', async (req, res) => {
     const { id, lat, lng } = req.body;
     if (!id || lat === undefined || lng === undefined) {
@@ -88,6 +83,20 @@ app.post('/api/gps', async (req, res) => {
         res.status(500).send({ message: 'Error saving GPS data' });
     }
 });
+
+
+// --- Static File Serving ---
+// Serve the built frontend files from the 'public' directory of the 'frontend' package
+const frontendPath = path.join(__dirname, '../frontend/public');
+app.use(express.static(frontendPath));
+
+// For any request that doesn't match a static file or an API route,
+// serve the index.html file. This is for client-side routing.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+// --- End Static File Serving ---
+
 
 // Start the server
 server.listen(port, () => {
