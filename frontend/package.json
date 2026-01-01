@@ -4,7 +4,8 @@
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "@react-google-maps/api": "^2.19.3"
   },
   "scripts": {
     "start": "echo 'To run this app, you would typically use react-scripts start, which is not installed in this minimal setup.' && exit 1"
