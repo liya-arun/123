@@ -18,10 +18,7 @@ function Map() {
   })
 
   const [map, setMap] = React.useState(null)
-  const [vehicles, setVehicles] = React.useState([
-    { id: 'bus1', lat: -3.745, lng: -38.523 },
-    { id: 'bus2', lat: -3.750, lng: -38.530 },
-  ]);
+  const [vehicles, setVehicles] = React.useState({});
 
   const onLoad = React.useCallback(function callback(map) {
     const bounds = new window.google.maps.LatLngBounds(center);
@@ -33,17 +30,17 @@ function Map() {
     setMap(null)
   }, [])
 
-  // Simulate real-time vehicle updates
+  // Fetch vehicle data from the backend
   React.useEffect(() => {
-    const interval = setInterval(() => {
-      setVehicles(currentVehicles =>
-        currentVehicles.map(vehicle => ({
-          ...vehicle,
-          lat: vehicle.lat + (Math.random() - 0.5) * 0.001,
-          lng: vehicle.lng + (Math.random() - 0.5) * 0.001,
-        }))
-      );
-    }, 2000); // Update every 2 seconds
+    const fetchVehicles = () => {
+      fetch('/api/vehicles')
+        .then(res => res.json())
+        .then(data => setVehicles(data))
+        .catch(err => console.error("Error fetching vehicles:", err));
+    };
+
+    fetchVehicles(); // Initial fetch
+    const interval = setInterval(fetchVehicles, 2000); // Poll every 2 seconds
 
     return () => clearInterval(interval);
   }, []);
@@ -56,10 +53,10 @@ function Map() {
         onLoad={onLoad}
         onUnmount={onUnmount}
       >
-        {vehicles.map(vehicle => (
+        {Object.keys(vehicles).map(id => (
           <Marker
-            key={vehicle.id}
-            position={{ lat: vehicle.lat, lng: vehicle.lng }}
+            key={id}
+            position={vehicles[id]}
           />
         ))}
       </GoogleMap>
